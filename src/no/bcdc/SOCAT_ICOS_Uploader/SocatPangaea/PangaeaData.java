@@ -1,7 +1,14 @@
 package no.bcdc.SOCAT_ICOS_Uploader.SocatPangaea;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
+import javax.net.ssl.HttpsURLConnection;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -79,7 +86,12 @@ public class PangaeaData {
 	/**
 	 * The parsed metadata XML
 	 */
-	protected Document metadataXML = null;
+	private Document metadataXML = null;
+	
+	/**
+	 * The data
+	 */
+	private String data = null;
 
 	/**
 	 * Constructor - downloads the metadata and data ready for processing
@@ -143,7 +155,7 @@ public class PangaeaData {
 			
 			if (null == xml) {
 				retriesLeft--;
-				System.out.println("Downloading metadata failed. Retrying in " + RETRY_WAIT_TIME + " seconds");
+				System.out.println("Data retrieval failed. Retrying in " + RETRY_WAIT_TIME + " seconds (" + retriesLeft + " attempts remaining)");
 
 				int waitCount = RETRY_WAIT_TIME;
 				while (waitCount > 0) {
@@ -174,9 +186,83 @@ public class PangaeaData {
 	
 	/**
 	 * Downloads the data from PANGAEA
+	 * @throws PangaeaException If a download error occurs
 	 */
-	private void downloadData() {
-		System.out.println("Downloading data for " + id);
+	private void downloadData() throws PangaeaException {
+		String downloadedData = null;
+		
+		int retriesLeft = NETWORK_RETRIES;
+		
+		while (null == downloadedData && retriesLeft > 0) {
+			System.out.println("Downloading data for " + id);
+
+			HttpsURLConnection conn = null;
+			InputStream stream = null;
+			StringWriter writer = null;
+			
+			try {
+				URL url = makeUrl(id);
+				conn = (HttpsURLConnection) url.openConnection();
+				conn.setRequestMethod("GET");
+				conn.connect();
+				
+				stream = conn.getInputStream();
+				writer = new StringWriter();
+				IOUtils.copy(stream, writer, StandardCharsets.UTF_8);
+				downloadedData = writer.toString();
+			} catch (FileNotFoundException e) {
+				throw new PangaeaException("Data not found on server");
+			} catch (Exception e) {
+				throw new PangaeaException("Data download failed", e);
+			} finally {
+				try {
+					if (null != writer) {
+						writer.close();
+					}
+					
+					if (null != stream) {
+						stream.close();
+					}
+					
+					if (null != conn) {
+						conn.disconnect();
+					}
+				} catch (IOException e) {
+					// Do nothing - we can say that we tried.
+				}
+			}
+			
+			if (null == downloadedData) {
+				retriesLeft--;
+				
+				int waitCount = RETRY_WAIT_TIME;
+				while (waitCount > 0) {
+					System.out.println("Data retrieval failed. Retrying in " + RETRY_WAIT_TIME + " seconds (" + retriesLeft + " attempts remaining)");
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// We don't care
+					}
+					waitCount--;
+				}
+			}
+		}
+		
+		this.data = downloadedData;
+	}
+	
+	/**
+	 * Make a URL for a data set
+	 * @param dataSetId The data set ID
+	 * @return The data set URL
+	 * @throws MalformedURLException If the generated URL is invalid
+	 */
+	private URL makeUrl(String dataSetId) throws MalformedURLException {
+		StringBuilder url = new StringBuilder("https://doi.pangaea.de/10.1594/PANGAEA.");
+		url.append(dataSetId);
+		url.append("?format=textfile");
+		
+		return new URL(url.toString());
 	}
 	
 	/**
