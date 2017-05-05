@@ -3,12 +3,14 @@ package no.bcdc.SOCAT_ICOS_Uploader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 
+import no.bcdc.SOCAT_ICOS_Uploader.CarbonPortal.Data;
+import no.bcdc.SOCAT_ICOS_Uploader.CarbonPortal.Metadata;
+import no.bcdc.SOCAT_ICOS_Uploader.CarbonPortal.MetadataException;
 import no.bcdc.SOCAT_ICOS_Uploader.SocatPangaea.PangaeaData;
 import no.bcdc.SOCAT_ICOS_Uploader.SocatPangaea.PangaeaException;
 
@@ -90,8 +92,42 @@ public class SOCAT_ICOS_Uploader {
 		return Arrays.asList(fileContents.split("\n"));
 	}
 	
-	private void processId(String id) throws PangaeaException {
+	/**
+	 * Process a single ID
+	 * @param id The PANGAEA ID
+	 * @throws PangaeaException If the data cannot be downloaded
+	 * @throws MetadataException If an error occurs while building the metadata
+	 */
+	private void processId(String id) throws PangaeaException, MetadataException {
 		System.out.println("Processing ID " + id);
 		PangaeaData data = new PangaeaData(id);
+		
+		Metadata cpMetadata = createCPMetadata(data);
+		Data cpData = createCPData(data);
+		
+	}
+	
+	/**
+	 * Create and populate the CP metadata object
+	 * @param data The PANGAEA data
+	 * @return The metadata object
+	 * @throws MetadataException If an error occurs while building the metadata
+	 */
+	private Metadata createCPMetadata(PangaeaData data) throws MetadataException {
+		
+		Metadata metadata = new Metadata();
+		
+		metadata.extractFromData(data.getDataContents());
+		
+		return metadata;
+	}
+	
+	/**
+	 * Create and populate the CP data object
+	 * @param data The PANGAEA data
+	 * @return The data object
+	 */
+	private Data createCPData(PangaeaData data) {
+		return new Data();
 	}
 }

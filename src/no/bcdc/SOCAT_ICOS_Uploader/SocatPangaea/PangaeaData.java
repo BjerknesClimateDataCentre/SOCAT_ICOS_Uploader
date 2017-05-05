@@ -288,4 +288,12 @@ public class PangaeaData {
 			}
 		}
 	}
+	
+	/**
+	 * Get the contents of the data file
+	 * @return The data
+	 */
+	public String getDataContents() {
+		return data;
+	}
 }
