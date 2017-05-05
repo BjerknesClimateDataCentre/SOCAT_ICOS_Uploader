@@ -112,12 +112,13 @@ public class SOCAT_ICOS_Uploader {
 	 * @param data The PANGAEA data
 	 * @return The metadata object
 	 * @throws MetadataException If an error occurs while building the metadata
+	 * @throws PangaeaException If an error occurs while processing the Pangaea data
 	 */
-	private Metadata createCPMetadata(PangaeaData data) throws MetadataException {
+	private Metadata createCPMetadata(PangaeaData data) throws MetadataException, PangaeaException {
 		
 		Metadata metadata = new Metadata();
 		
-		metadata.extractFromData(data.getDataContents());
+		metadata.setHashSum(data.getDataHashSum());
 		
 		return metadata;
 	}

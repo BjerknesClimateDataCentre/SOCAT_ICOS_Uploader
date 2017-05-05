@@ -4,9 +4,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.xml.namespace.QName;
@@ -290,10 +293,23 @@ public class PangaeaData {
 	}
 	
 	/**
-	 * Get the contents of the data file
-	 * @return The data
+	 * Calculate the SHA256 hash sum from the data
+	 * @param dataContents The data
+	 * @throws NoSuchAlgorithmException 
 	 */
-	public String getDataContents() {
-		return data;
+	public String getDataHashSum() throws PangaeaException {
+
+		String result;
+		
+		try {
+			MessageDigest md = MessageDigest.getInstance("SHA-256");
+			md.update(data.getBytes("UTF-8"));
+			byte[] digest = md.digest();
+			result = String.format("%064x", new BigInteger(1, digest));
+		} catch (Exception e) {
+			throw new PangaeaException("Error while calculating hash sum", e);
+		}
+		
+		return result;
 	}
 }
