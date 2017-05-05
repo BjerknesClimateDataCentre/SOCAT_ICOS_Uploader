@@ -16,6 +16,9 @@ import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.rpc.ParameterMode;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import org.apache.axis.Constants;
 import org.apache.axis.client.Call;
@@ -72,6 +75,11 @@ public class PangaeaData {
 	private static final String DATASET_NOT_FOUND_ERROR = "This is not a valid PANGAEA DOI or DATASETID";
 	
 	/**
+	 * The XPath for the EXPO Code
+	 */
+	private static final String XPATH_EXPOCODE = "/MetaData/event/label";
+	
+	/**
 	 * The PANGAEA ID
 	 */
 	private String id;
@@ -95,7 +103,12 @@ public class PangaeaData {
 	 * The data
 	 */
 	private String data = null;
-
+	
+	/**
+	 * XPath resolver for metadata files
+	 */
+	protected XPath xPathResolver = null;
+	
 	/**
 	 * Constructor - downloads the metadata and data ready for processing
 	 * @param id The PANGAEA ID
@@ -103,6 +116,10 @@ public class PangaeaData {
 	 */
 	public PangaeaData(String id) throws PangaeaException {
 		this.id = id;
+		XPathFactory xPathFactory = XPathFactory.newInstance();
+		xPathResolver = xPathFactory.newXPath();
+		xPathResolver.setNamespaceContext(new PangaeaMetadataNamespaceContext());
+
 		initSession();
 		downloadMetadata();
 		downloadData();
@@ -308,6 +325,51 @@ public class PangaeaData {
 			result = String.format("%064x", new BigInteger(1, digest));
 		} catch (Exception e) {
 			throw new PangaeaException("Error while calculating hash sum", e);
+		}
+		
+		return result;
+	}
+	
+	/**
+	 * Get the EXPO Code for this data set
+	 * @return The EXPO code
+	 */
+	public String getExpoCode() {
+		String result = null;
+		
+		String eventLabel = evaluateXPath("EXPOCODE", XPATH_EXPOCODE);
+		if (null != eventLabel) {
+			result = eventLabel.replaceAll("(.*)-track$", "$1");
+		}
+		
+		return result;
+	}
+	
+	/**
+	 * Evaluate an XPath in the metadata.
+	 * 
+	 * A set of XPaths can be supplied, which will be evaluated in turn until a match is found.
+	 * If no match is found, a null value will be returned.
+	 * 
+	 * @param xPath The XPath(s) to evaluate
+	 * @return The matching string
+	 * @throws ValueLookupException If the XPath fails
+	 */
+	private String evaluateXPath(String tagName, String... xPaths) {
+		String result = null;
+		
+		for (String xPath : xPaths) {
+			try {
+				result = xPathResolver.evaluate(xPath, metadataXML);
+				if (null != result) {
+					result = result.trim();
+					if (result.length() > 0) {
+						break;
+					}
+				}
+			} catch (XPathExpressionException e) {
+				// Do nothing - we'll try the next one
+			}
 		}
 		
 		return result;

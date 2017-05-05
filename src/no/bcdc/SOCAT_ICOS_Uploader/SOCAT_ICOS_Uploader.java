@@ -11,6 +11,8 @@ import org.apache.commons.io.FileUtils;
 import no.bcdc.SOCAT_ICOS_Uploader.CarbonPortal.Data;
 import no.bcdc.SOCAT_ICOS_Uploader.CarbonPortal.Metadata;
 import no.bcdc.SOCAT_ICOS_Uploader.CarbonPortal.MetadataException;
+import no.bcdc.SOCAT_ICOS_Uploader.Lookups.FilenameLookup;
+import no.bcdc.SOCAT_ICOS_Uploader.Lookups.LookupNotFoundException;
 import no.bcdc.SOCAT_ICOS_Uploader.SocatPangaea.PangaeaData;
 import no.bcdc.SOCAT_ICOS_Uploader.SocatPangaea.PangaeaException;
 
@@ -24,12 +26,24 @@ import no.bcdc.SOCAT_ICOS_Uploader.SocatPangaea.PangaeaException;
 public class SOCAT_ICOS_Uploader {
 	
 	/**
+	 * The configuration
+	 */
+	private static Config config;
+	
+	/**
+	 * The filename lookup object
+	 */
+	private FilenameLookup filenameLookup;
+	
+	/**
 	 * Move into the object world. This takes in the command line file,
 	 * extracts the IDs and processes each one in turn.
 	 * @param idsFile The file containing PANGAEA IDs
 	 * @throws Exception If any unhandled errors appear 
 	 */
 	private SOCAT_ICOS_Uploader(File idsFile) throws Exception {
+		filenameLookup = new FilenameLookup(config.getSocatMetadataFile());
+
 		List <String> ids = getIdList(idsFile);
 		for (String id : ids) {
 			processId(id);
@@ -43,12 +57,14 @@ public class SOCAT_ICOS_Uploader {
 	public static void main(String[] args) {
 		
 		try {
-			if (args.length != 1) {
-				System.out.println("Usage: java -jar SOCAT_ICOS_Uploader.jar <file of PANGAEA IDs>");
+			if (args.length != 2) {
+				System.out.println("Usage: java -jar SOCAT_ICOS_Uploader.jar <config file> <file of PANGAEA IDs>");
 				System.exit(0);
 			}
 			
-			File idsFile = new File(args[0]);
+			config = new Config(args[0]);
+			
+			File idsFile = new File(args[1]);
 			
 			if (checkFile(idsFile)) {
 				new SOCAT_ICOS_Uploader(idsFile);
@@ -63,7 +79,7 @@ public class SOCAT_ICOS_Uploader {
 	 * @param filename The filename to check
 	 * @return {@code true} if the file passes all checks; {@code false} if it does not.
 	 */
-	private static boolean checkFile(File file) {
+	protected static boolean checkFile(File file) {
 		
 		boolean ok = true;
 		
@@ -97,8 +113,9 @@ public class SOCAT_ICOS_Uploader {
 	 * @param id The PANGAEA ID
 	 * @throws PangaeaException If the data cannot be downloaded
 	 * @throws MetadataException If an error occurs while building the metadata
+	 * @throws LookupNotFoundException If a lookup fails
 	 */
-	private void processId(String id) throws PangaeaException, MetadataException {
+	private void processId(String id) throws PangaeaException, MetadataException, LookupNotFoundException {
 		System.out.println("Processing ID " + id);
 		PangaeaData data = new PangaeaData(id);
 		
@@ -113,12 +130,14 @@ public class SOCAT_ICOS_Uploader {
 	 * @return The metadata object
 	 * @throws MetadataException If an error occurs while building the metadata
 	 * @throws PangaeaException If an error occurs while processing the Pangaea data
+	 * @throws LookupNotFoundException If a lookup fails
 	 */
-	private Metadata createCPMetadata(PangaeaData data) throws MetadataException, PangaeaException {
+	private Metadata createCPMetadata(PangaeaData data) throws MetadataException, PangaeaException, LookupNotFoundException {
 		
 		Metadata metadata = new Metadata();
 		
 		metadata.setHashSum(data.getDataHashSum());
+		metadata.setFilename(filenameLookup.getFilename(data.getExpoCode()));
 		
 		return metadata;
 	}
