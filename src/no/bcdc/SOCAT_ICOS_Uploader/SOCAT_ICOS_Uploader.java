@@ -11,8 +11,11 @@ import org.apache.commons.io.FileUtils;
 import no.bcdc.SOCAT_ICOS_Uploader.CarbonPortal.Data;
 import no.bcdc.SOCAT_ICOS_Uploader.CarbonPortal.Metadata;
 import no.bcdc.SOCAT_ICOS_Uploader.CarbonPortal.MetadataException;
+import no.bcdc.SOCAT_ICOS_Uploader.Lookups.CreationDateLookup;
+import no.bcdc.SOCAT_ICOS_Uploader.Lookups.DataObjectSpecLookup;
 import no.bcdc.SOCAT_ICOS_Uploader.Lookups.FilenameLookup;
 import no.bcdc.SOCAT_ICOS_Uploader.Lookups.LookupNotFoundException;
+import no.bcdc.SOCAT_ICOS_Uploader.Lookups.StationLookup;
 import no.bcdc.SOCAT_ICOS_Uploader.SocatPangaea.PangaeaData;
 import no.bcdc.SOCAT_ICOS_Uploader.SocatPangaea.PangaeaException;
 
@@ -36,6 +39,11 @@ public class SOCAT_ICOS_Uploader {
 	private FilenameLookup filenameLookup;
 	
 	/**
+	 * The station lookup object
+	 */
+	private StationLookup stationLookup;
+	
+	/**
 	 * Move into the object world. This takes in the command line file,
 	 * extracts the IDs and processes each one in turn.
 	 * @param idsFile The file containing PANGAEA IDs
@@ -43,6 +51,7 @@ public class SOCAT_ICOS_Uploader {
 	 */
 	private SOCAT_ICOS_Uploader(File idsFile) throws Exception {
 		filenameLookup = new FilenameLookup(config.getSocatMetadataFile());
+		stationLookup = new StationLookup(config.getStationLookupFile());
 
 		List <String> ids = getIdList(idsFile);
 		for (String id : ids) {
@@ -139,6 +148,11 @@ public class SOCAT_ICOS_Uploader {
 		
 		metadata.setHashSum(data.getDataHashSum());
 		metadata.setFilename(filenameLookup.getFilename(data.getExpoCode()));
+		metadata.setCreationDate(CreationDateLookup.getCreationDate(metadata.getFilename()));
+		metadata.setStation(stationLookup.getIcosStation(data.getExpoCode()));
+		metadata.setRows(data.getRowCount());
+		metadata.setObjectSpecification(DataObjectSpecLookup.getObjectSpec(data.getColumnHeaders()));
+		metadata.setComment(data.getCitation());
 		
 		return metadata;
 	}

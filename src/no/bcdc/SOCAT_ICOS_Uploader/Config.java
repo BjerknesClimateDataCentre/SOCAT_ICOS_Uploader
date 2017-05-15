@@ -9,6 +9,8 @@ public class Config extends Properties {
 
 	private static final String SOCAT_METADATA = "socat_metadata_table";
 	
+	private static final String STATION_LOOKUP = "station_lookup_table";
+	
 	protected Config(String configFilename) throws ConfigException {
 		super();
 		
@@ -31,5 +33,14 @@ public class Config extends Properties {
 		}
 		
 		return metadataFile;
+	}
+	
+	public File getStationLookupFile() throws ConfigException {
+		File lookupFile = new File(getProperty(STATION_LOOKUP));
+		if (!SOCAT_ICOS_Uploader.checkFile(lookupFile)) {
+			throw new ConfigException("Cannot read SOCAT Metadata file");
+		}
+		
+		return lookupFile;
 	}
 }

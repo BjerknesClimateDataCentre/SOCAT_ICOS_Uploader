@@ -21,8 +21,8 @@ public class FilenameLookup {
 	private String fileData;
 	
 	/**
-	 * Constructor - takes in a metadata file and strips off the header
-	 * @param metadataFile The metadata file
+	 * Constructor - takes in the SOCAT metadata file and strips off the header
+	 * @param metadataFile The SOCAT metadata file
 	 * @throws IOException If the file cannot be read
 	 */
 	public FilenameLookup(File metadataFile) throws IOException {

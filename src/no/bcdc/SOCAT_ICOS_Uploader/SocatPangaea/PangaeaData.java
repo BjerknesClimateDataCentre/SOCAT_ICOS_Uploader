@@ -346,6 +346,53 @@ public class PangaeaData {
 	}
 	
 	/**
+	 * Get the number of data rows in the file
+	 * @return The number of rows
+	 */
+	public int getRowCount() {
+		return getDataLines().length - 1;
+	}
+	
+	/**
+	 * Extract the data lines from the file data
+	 */
+	private String[] getDataLines() {
+		int headerEnd = data.indexOf("*/");
+		String dataLines = data.substring(headerEnd + 3);
+		return dataLines.split("\n");
+	}
+	
+	/**
+	 * Get the column headers row from the data
+	 * @return The column headers
+	 */
+	public String getColumnHeaders() {
+		return getDataLines()[0];
+	}
+	
+	/**
+	 * Get the citation line from the data
+	 * @return
+	 */
+	public String getCitation() {
+		
+		String citation = null;
+		
+		String[] lines = data.split("\n");
+		for (String line : lines) {
+			if (line.trim().startsWith("Citation:")) {
+				citation = line.trim();
+				break;
+			}
+		}
+		
+		if (null != citation && citation.endsWith(",")) {
+			citation = citation.substring(0, citation.length() - 1);
+		}
+		return citation;
+	}
+	
+	/**
 	 * Evaluate an XPath in the metadata.
 	 * 
 	 * A set of XPaths can be supplied, which will be evaluated in turn until a match is found.
