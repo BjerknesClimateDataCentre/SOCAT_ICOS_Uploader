@@ -20,7 +20,11 @@ public class FilenameLookup {
 	 */
 	private String fileData;
 	
-	
+	/**
+	 * Constructor - takes in a metadata file and strips off the header
+	 * @param metadataFile The metadata file
+	 * @throws IOException If the file cannot be read
+	 */
 	public FilenameLookup(File metadataFile) throws IOException {
 		String fileContents = FileUtils.readFileToString(metadataFile, StandardCharsets.UTF_8);
 		

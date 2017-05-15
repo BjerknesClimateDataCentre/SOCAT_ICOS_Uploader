@@ -122,6 +122,7 @@ public class SOCAT_ICOS_Uploader {
 		Metadata cpMetadata = createCPMetadata(data);
 		Data cpData = createCPData(data);
 		
+		System.out.println(cpMetadata.getHumanReadableJSONString());
 	}
 	
 	/**
