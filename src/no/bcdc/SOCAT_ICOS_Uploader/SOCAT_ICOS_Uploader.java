@@ -10,6 +10,8 @@ import org.apache.commons.io.FileUtils;
 
 import no.bcdc.SOCAT_ICOS_Uploader.CarbonPortal.Metadata;
 import no.bcdc.SOCAT_ICOS_Uploader.CarbonPortal.MetadataException;
+import no.bcdc.SOCAT_ICOS_Uploader.CarbonPortal.Uploader;
+import no.bcdc.SOCAT_ICOS_Uploader.CarbonPortal.UploaderException;
 import no.bcdc.SOCAT_ICOS_Uploader.Lookups.CreationDateLookup;
 import no.bcdc.SOCAT_ICOS_Uploader.Lookups.DataObjectSpecLookup;
 import no.bcdc.SOCAT_ICOS_Uploader.Lookups.FilenameLookup;
@@ -43,6 +45,11 @@ public class SOCAT_ICOS_Uploader {
 	private StationLookup stationLookup;
 	
 	/**
+	 * The CP uploader
+	 */
+	private Uploader uploader;
+	
+	/**
 	 * Move into the object world. This takes in the command line file,
 	 * extracts the IDs and processes each one in turn.
 	 * @param idsFile The file containing PANGAEA IDs
@@ -51,6 +58,7 @@ public class SOCAT_ICOS_Uploader {
 	private SOCAT_ICOS_Uploader(File idsFile) throws Exception {
 		filenameLookup = new FilenameLookup(config.getSocatMetadataFile());
 		stationLookup = new StationLookup(config.getStationLookupFile());
+		uploader = new Uploader(config);
 
 		List <String> ids = getIdList(idsFile);
 		for (String id : ids) {
@@ -123,13 +131,12 @@ public class SOCAT_ICOS_Uploader {
 	 * @throws MetadataException If an error occurs while building the metadata
 	 * @throws LookupNotFoundException If a lookup fails
 	 */
-	private void processId(String id) throws PangaeaException, MetadataException, LookupNotFoundException {
+	private void processId(String id) throws PangaeaException, MetadataException, LookupNotFoundException, UploaderException {
 		System.out.println("Processing ID " + id);
 		PangaeaData data = new PangaeaData(id);
 		
 		Metadata cpMetadata = createCPMetadata(data);
-		
-		System.out.println(cpMetadata.getHumanReadableJSONString());
+		uploader.upload(cpMetadata, data);
 	}
 	
 	/**

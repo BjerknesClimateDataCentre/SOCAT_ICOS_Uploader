@@ -164,6 +164,10 @@ public class Metadata {
 		json.append("  }\n");
 		json.append("}\n");
 		
-		return json.toString();
+		return json.toString().replaceAll("\t", " ");
+	}
+	
+	public String getJSONString() {
+		return getHumanReadableJSONString().replaceAll("  +", " ").replaceAll("\n", "");
 	}
 }

@@ -11,6 +11,16 @@ public class Config extends Properties {
 	
 	private static final String STATION_LOOKUP = "station_lookup_table";
 	
+	private static final String CP_AUTH_URL = "cp_auth_url";
+	
+	private static final String CP_METADATA_URL = "cp_metadata_url";
+	
+	private static final String CP_DATA_URL_STUB = "cp_data_url_stub";
+	
+	private static final String CP_USER = "cp_user";
+	
+	private static final String CP_PASSWORD = "cp_password";
+	
 	protected Config(String configFilename) throws ConfigException {
 		super();
 		
@@ -42,5 +52,25 @@ public class Config extends Properties {
 		}
 		
 		return lookupFile;
+	}
+	
+	public String getCPUsername() {
+		return getProperty(CP_USER);
+	}
+	
+	public String getCPPassword() {
+		return getProperty(CP_PASSWORD);
+	}
+	
+	public String getCPAuthUrl() {
+		return getProperty(CP_AUTH_URL);
+	}
+	
+	public String getCPMetadataUrl() {
+		return getProperty(CP_METADATA_URL);
+	}
+	
+	public String getCPDataUrlStub() {
+		return getProperty(CP_DATA_URL_STUB);
 	}
 }
