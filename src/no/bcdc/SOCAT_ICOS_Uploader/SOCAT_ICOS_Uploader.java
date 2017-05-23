@@ -8,7 +8,6 @@ import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 
-import no.bcdc.SOCAT_ICOS_Uploader.CarbonPortal.Data;
 import no.bcdc.SOCAT_ICOS_Uploader.CarbonPortal.Metadata;
 import no.bcdc.SOCAT_ICOS_Uploader.CarbonPortal.MetadataException;
 import no.bcdc.SOCAT_ICOS_Uploader.Lookups.CreationDateLookup;
@@ -129,7 +128,6 @@ public class SOCAT_ICOS_Uploader {
 		PangaeaData data = new PangaeaData(id);
 		
 		Metadata cpMetadata = createCPMetadata(data);
-		Data cpData = createCPData(data);
 		
 		System.out.println(cpMetadata.getHumanReadableJSONString());
 	}
@@ -155,14 +153,5 @@ public class SOCAT_ICOS_Uploader {
 		metadata.setComment(data.getCitation());
 		
 		return metadata;
-	}
-	
-	/**
-	 * Create and populate the CP data object
-	 * @param data The PANGAEA data
-	 * @return The data object
-	 */
-	private Data createCPData(PangaeaData data) {
-		return new Data();
 	}
 }
