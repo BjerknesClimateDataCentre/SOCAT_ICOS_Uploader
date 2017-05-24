@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -420,5 +421,14 @@ public class PangaeaData {
 		}
 		
 		return result;
+	}
+	
+	/**
+	 * Get the contents of the data file as a byte array
+	 * @return The data
+	 * @throws UnsupportedEncodingException If UTF-8 is not supported for some reason
+	 */
+	public byte[] getDataBytes() throws UnsupportedEncodingException {
+		return data.getBytes("UTF-8");
 	}
 }

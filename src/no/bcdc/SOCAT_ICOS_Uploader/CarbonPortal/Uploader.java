@@ -13,6 +13,7 @@ import org.apache.http.client.CookieStore;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -49,7 +50,10 @@ public class Uploader {
 		}
 		
 		CloseableHttpClient client = null;
-		CloseableHttpResponse response = null;
+		CloseableHttpResponse metadataResponse = null;
+		CloseableHttpResponse dataResponse = null;
+		InputStream metadataContentStream = null;
+		InputStream dataContentStream = null;
 
 		try {
 			System.out.print("Uploading metadata...");
@@ -60,25 +64,51 @@ public class Uploader {
 			
 			HttpPost post = new HttpPost(config.getCPMetadataUrl());
 			post.setHeader(HTTP.CONTENT_TYPE, "application/json;charset=UTF-8");
-			System.out.println(metadata.getJSONString());
-			HttpEntity entity = new ByteArrayEntity(metadata.getJSONString().getBytes("UTF-8"));
-	        post.setEntity(entity);
+			HttpEntity metadataEntity = new ByteArrayEntity(metadata.getJSONString().getBytes("UTF-8"));
+	        post.setEntity(metadataEntity);
 	        
-	        response = client.execute(post, context);
+	        metadataResponse = client.execute(post, context);
 	        
-	        int statusCode = response.getStatusLine().getStatusCode();
-			InputStream contentStream = response.getEntity().getContent();
-	        if (statusCode != 200) {
-	        	System.out.println("Failed (" + statusCode + ")");
-	        	System.out.println(IOUtils.toString(contentStream, "UTF-8"));
-	        } else {
-	        	System.out.println("OK");
-				System.out.println(IOUtils.toString(contentStream, "UTF-8"));
+	        int metadataStatusCode = metadataResponse.getStatusLine().getStatusCode();
+			metadataContentStream = metadataResponse.getEntity().getContent();
+	        if (metadataStatusCode != 200) {
+	        	System.out.println("Failed (" + metadataStatusCode + ")");
+	        	throw new UploaderException("Metadata upload failed: " + IOUtils.toString(metadataContentStream, "UTF-8"));
 	        }
+	        
+	        
+	        System.out.println("OK");
+			System.out.print("Uploading data...");
+	        
+	        
+	        String dataUploadUrl = IOUtils.toString(metadataContentStream, "UTF-8");
+			
+			// Trim the filename off the ID
+			dataUploadUrl = dataUploadUrl.substring(0, dataUploadUrl.lastIndexOf('/'));
+			
+			HttpPut put = new HttpPut(dataUploadUrl);
+			HttpEntity dataEntity = new ByteArrayEntity(data.getDataBytes());
+			put.setEntity(dataEntity);
+			
+			dataResponse = client.execute(put, context);
+			int dataResponseCode = dataResponse.getStatusLine().getStatusCode();
+			if (dataResponseCode == 200) {
+				System.out.println("OK - Data URL = " + dataUploadUrl);
+				System.out.println();
+			} else {
+				System.out.print("Failed (" + dataResponseCode + ")");
+				dataContentStream = dataResponse.getEntity().getContent();
+	        	throw new UploaderException("Data upload failed: " + IOUtils.toString(dataContentStream, "UTF-8"));
+			}
+
+	        
 		} catch (Exception e) {
 			throw new UploaderException(e);
 		} finally {
-			closeResponse(response);
+			closeInputStream(metadataContentStream);
+			closeInputStream(dataContentStream);
+			closeResponse(metadataResponse);
+			closeResponse(dataResponse);
 			closeClient(client);
 		}
 	}
@@ -89,6 +119,7 @@ public class Uploader {
 		
 		CloseableHttpClient client = null;
 		CloseableHttpResponse response = null;
+		InputStream contentStream = null;
 		
 		try {
 			HttpClientContext context = HttpClientContext.create();
@@ -108,7 +139,7 @@ public class Uploader {
 				System.out.println("OK"); 
 			} else {
 				System.out.println("Failed (" + status.getStatusCode() + ")");
-				InputStream contentStream = response.getEntity().getContent();
+				contentStream = response.getEntity().getContent();
 				System.out.println(IOUtils.toString(contentStream, "UTF-8"));
 				throw new UploaderException("Authentication Failed");
 			}
@@ -116,8 +147,9 @@ public class Uploader {
 		} catch (Exception e) {
 			throw new UploaderException(e);
 		} finally {
-			closeClient(client);
+			closeInputStream(contentStream);
 			closeResponse(response);
+			closeClient(client);
 		}
 	}
 
@@ -133,6 +165,17 @@ public class Uploader {
 	}
 
 	private void closeResponse(CloseableHttpResponse response) {
+		if (null != response) {
+			try {
+				response.close();
+			} catch (IOException e) {
+				// Meh
+			
+			}
+		}
+	}
+
+	private void closeInputStream(InputStream response) {
 		if (null != response) {
 			try {
 				response.close();
