@@ -7,6 +7,11 @@ import java.util.Properties;
 
 public class Config extends Properties {
 
+	/**
+	 * The serial version UID
+	 */
+	private static final long serialVersionUID = 6537059788065165096L;
+
 	private static final String SOCAT_METADATA = "socat_metadata_table";
 	
 	private static final String STATION_LOOKUP = "station_lookup_table";
